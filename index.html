@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Simu v0.1</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mx-auto" id="app">
+    <h1 class="text-2xl font-bold my-4">
+      Calculadora de investimentos em parcelas
+    </h1>
+
+    <div>
+      <div class="mb-4">
+        <label for="time" class="font-bold block mb-1">
+          Quantos anos investindo?
+        </label>
+        <input type="number" id="years" class="block border-b" v-model="years">
+      </div>
+
+      <div class="mb-4">
+        <label for="budget" class="font-bold block mb-1">
+          Quantos reais por mês?
+        </label>
+        <input type="range" id="budget" class="block border-b" v-model="budget">
+      </div>
+
+      <div class="mb-4">
+        <label for="rate" class="font-bold block mb-1">
+          Rendendo quanto % ao ano?
+        </label>
+        <input type="number" id="rate" class="block border-b" v-model="rate">
+      </div>
+
+      <div class="pb-4">
+        <p class="text-xl">
+          Após {{ years }} anos guardando R$ {{ budget }} por mês, você terá um montante total de
+          <span class="block font-bold text-3xl">
+            R$ {{ amount }}
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var app = new Vue({
+      el: '#app',
+      data: {
+        years: 25,
+        budget: 300,
+        rate: 4
+      },
+      computed: {
+        amount: function() {
+          var monthlyFactor = Math.pow(1 + parseFloat(this.rate) / 100.0, 1.0 / 12)
+          var amount = 0
+
+          for (var i = 0; i < this.years * 12; i++) {
+            amount = amount * monthlyFactor + parseInt(this.budget)
+          }
+
+          return Math.round(amount).toLocaleString('pt-br')
+        }
+      }
+    })
+  </script>
+</body>
+</html>
