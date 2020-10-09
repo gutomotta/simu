@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Calculadora de investimentos em parcelas</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+  <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+
+  <style>
+    input[type=range].input-range {
+      width: 100%;
+      margin: 9px 0;
+      background-color: transparent;
+      -webkit-appearance: none;
+    }
+    input[type=range].input-range:focus {
+      outline: none;
+    }
+    input[type=range].input-range::-webkit-slider-runnable-track {
+      background: #fffffe;
+      border: 1px solid #c8c8c8;
+      width: 100%;
+      height: 0px;
+      cursor: pointer;
+    }
+    input[type=range].input-range::-webkit-slider-thumb {
+      margin-top: -10px;
+      width: 18px;
+      height: 18px;
+      background: #000000;
+      border: 0;
+      border-radius: 50px;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+    input[type=range].input-range:focus::-webkit-slider-runnable-track {
+      background: #fffffe;
+    }
+    input[type=range].input-range::-moz-range-track {
+      background: #fffffe;
+      border: 1px solid #c8c8c8;
+      width: 100%;
+      height: 0px;
+      cursor: pointer;
+    }
+    input[type=range].input-range::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: #000000;
+      border: 0;
+      border-radius: 50px;
+      cursor: pointer;
+    }
+    input[type=range].input-range::-ms-track {
+      background: transparent;
+      border-color: transparent;
+      border-width: 9.3px 0;
+      color: transparent;
+      width: 100%;
+      height: 0px;
+      cursor: pointer;
+    }
+    input[type=range].input-range::-ms-fill-lower {
+      background: #fffffe;
+      border: 1px solid #c8c8c8;
+    }
+    input[type=range].input-range::-ms-fill-upper {
+      background: #fffffe;
+      border: 1px solid #c8c8c8;
+    }
+    input[type=range].input-range::-ms-thumb {
+      width: 18px;
+      height: 18px;
+      background: #000000;
+      border: 0;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 0px;
+      /*Needed to keep the Edge thumb centred*/
+    }
+    input[type=range].input-range:focus::-ms-fill-lower {
+      background: #fffffe;
+    }
+    input[type=range].input-range:focus::-ms-fill-upper {
+      background: #fffffe;
+    }
+    /*TODO: Use one of the selectors from https://stackoverflow.com/a/20541859/7077589 and figure out
+    how to remove the virtical space around the range input in IE*/
+    @supports (-ms-ime-align:auto) {
+      /* Pre-Chromium Edge only styles, selector taken from hhttps://stackoverflow.com/a/32202953/7077589 */
+      input[type=range].input-range {
+        margin: 0;
+        /*Edge starts the margin from the thumb, not the track as other browsers do*/
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container mx-auto" id="app">
+    <h1 class="text-3xl text-center font-bold mt-4 mb-8">
+      Calculadora de investimentos em parcelas
+    </h1>
+
+    <div class="grid grid-cols-2">
+      <div class="p-4">
+        <div class="pb-4">
+          <label for="time" class="block pb-1">
+            Investindo por
+            <span class="text-2xl font-bold">{{ years }}</span>
+            anos
+          </label>
+          <input
+            type="range"
+            id="years"
+            class="input-range"
+            v-model="years"
+            min="5"
+            max="40">
+        </div>
+
+        <div class="pb-4">
+          <label for="budget" class="block pb-1">
+            um valor de
+            <span class="text-2xl font-bold">R$ {{ human(parseInt(budget)) }}</span>
+            todo mês
+          </label>
+          <input
+            type="range"
+            id="budget"
+            class="input-range"
+            v-model="budget"
+            min="30"
+            max="2000">
+        </div>
+
+        <div class="pb-4">
+          <label for="rate" class="block pb-1">
+            com um rendimento <strong>real</strong> (descontando a inflação) de
+            <span class="text-2xl font-bold">{{ human(rate) }} %</span>
+            ao ano
+          </label>
+          <input
+            type="range"
+            id="rate"
+            class="input-range"
+            v-model="rate"
+            min="1"
+            max="10"
+            step="0.1">
+        </div>
+
+        <div class="pb-4">
+          <label for="spendOverYears" class="block pb-1">
+            para gastar ao longo de
+            <span class="text-2xl font-bold">{{ spendOverYears }}</span>
+            anos
+          </label>
+          <input
+            type="range"
+            id="spendOverYears"
+            class="input-range"
+            v-model="spendOverYears"
+            min="15"
+            max="40">
+        </div>
+      </div>
+
+      <div class="p-4 text-center">
+        <p class="text-xl">
+          você terá, em
+          <span class="text-2xl font-bold">{{ endYear }}</span>,
+          um total de
+        </p>
+
+        <p class="text-5xl font-bold">R$ {{ human(round(amount)) }}</p>
+
+        <p class="text-xl">
+          que te renderão um valor mensal de
+        </p>
+
+        <p class="text-5xl font-bold">R$ {{ human(round(monthlyYield)) }}</p>
+
+        <p class="text-xl">
+          te permitindo gastar ao longo de
+          <span class="text-2xl font-bold">{{ spendOverYears }} anos</span>
+          um valor mensal de
+        </p>
+
+        <p class="text-5xl font-bold">R$ {{ human(round(monthlyValue)) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var app = new Vue({
+      el: '#app',
+      data: {
+        years: 25,
+        budget: 300,
+        rate: 4,
+        spendOverYears: 15
+      },
+      computed: {
+        yearlyFactor: function() {
+          return 1 + parseFloat(this.rate) / 100.0
+        },
+        monthlyFactor: function() {
+          return Math.pow(this.yearlyFactor, 1.0 / 12)
+        },
+        amount: function() {
+          var amount = 0
+
+          for (var i = 0; i < this.years * 12; i++) {
+            amount = amount * this.monthlyFactor + parseInt(this.budget)
+          }
+
+          return amount
+        },
+        endYear: function() {
+          return (new Date()).getFullYear() + parseInt(this.years)
+        },
+        monthlyYield: function() {
+          return this.amount * (this.monthlyFactor - 1)
+        },
+        monthlyValue: function() {
+          var rightBound = 10 * this.monthlyYield
+          var leftBound = 0
+          var guess
+          var tries = 0
+
+          while(true) {
+            if(++tries >= 50) break
+
+            guess = 0.5 * (leftBound + rightBound)
+
+            let amountAfterSpending = this.consume(guess)
+            if(amountAfterSpending < -10) rightBound = guess
+            else if(amountAfterSpending > 10) leftBound = guess
+            else break
+          }
+
+          return guess
+        }
+      },
+      methods: {
+        human: function(value) {
+          return value.toLocaleString('pt-br')
+        },
+        round: function(value) {
+          return Math.round(value)
+        },
+        consume: function(monthlyValue) {
+          var amount = this.amount
+
+          for (var i = 0; i < this.spendOverYears; i++) {
+            amount = amount * this.yearlyFactor - 12 * monthlyValue
+          }
+
+          return amount
+        }
+      }
+    })
+  </script>
+</body>
+</html>
